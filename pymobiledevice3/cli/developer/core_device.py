@@ -726,9 +726,14 @@ async def core_device_universal_hid_service_session(
     """
     gsid = _parse_int_auto(gesture_service_id)
     tsid = _parse_int_auto(touch_service_id)
-    lines = (script.read_text() if script else sys.stdin.read()).splitlines()
+    if script is not None:
+        line_iter = enumerate(script.read_text().splitlines(), 1)
+    else:
+        # Read stdin line-by-line (not read-all) so interactive/persistent
+        # sessions process gestures as they arrive instead of blocking on EOF.
+        line_iter = enumerate(sys.stdin, 1)
     async with touch_session(service_provider) as service:
-        for lineno, raw in enumerate(lines, 1):
+        for lineno, raw in line_iter:
             line = raw.split("#", 1)[0].strip()
             if not line:
                 continue
